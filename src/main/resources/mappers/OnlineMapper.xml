@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.green.fefu.online.OnlineMapper">
+    <!--  선생님의 담당 학년  -->
+    <select id="teacherClass">
+        SELECT FLOOR(B.class_id/100) AS teasGrade
+        FROM teacher A
+        INNER JOIN class B
+        ON #{teaId}=B.tea_id
+        LIMIT 1;
+    </select>
+
+    <select id="studentClass">
+        SELECT FLOOR(grade/10000) AS stusGrade
+        FROM student A
+        WHERE stu_id=#{stuId}
+        ORDER BY created_at DESC
+        LIMIT 1;
+    </select>
+
+    <select id="parentsClass">
+        SELECT FLOOR(grade/10000) AS parsGrade
+        FROM student A
+        INNER JOIN parents B
+        ON B.parents_id=A.parent_id
+        WHERE parents_id=#{parentsId} AND stu_id=#{stuId}
+        LIMIT 1;
+    </select>
+
+    <select id="testAnalysis">
+        SELECT A.tag_id, A.tag_name, B.tag_count
+        FROM type_tag A
+        INNER JOIN(SELECT type_tag, COUNT(type_tag) AS tag_count
+                    FROM haesol_online
+                    WHERE que_id IN #{wrongPks}
+                    GROUP BY type_tag
+                    ORDER BY tag_count DESC
+                    LIMIT 1) B
+        ON A.tag_id=B.type_tag;
+    </select>
+
+    <select id="getTagList">
+        SELECT B.tag_name
+        FROM (SELECT *
+              FROM haesol_online
+              WHERE que_id IN #{queId}) A
+        INNER JOIN type_tag B
+        ON A.type_tag=B.tag_id;
+    </select>
+
+    <delete id="tmpDeleteQuestion">
+        DELETE
+        FROM haesol_online
+        WHERE que_id=#{questionPk}
+    </delete>
+
+    <delete id="tmpDeleteQuestionMul">
+        DELETE
+        FROM haesol_online_multiple
+        WHERE que_id=#{questionPk}
+    </delete>
+</mapper>

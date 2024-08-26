@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.green.fefu.parents.ParentsUserMapper">
+
+    <insert id="postParentsUser" keyProperty="parentsId" useGeneratedKeys="true" >
+        INSERT INTO parents
+        SET uid = #{uid}
+            , upw = #{upw}
+            , name = #{nm}
+            , phone = #{phone}
+            , sub_phone = #{subPhone}
+            , email = #{email}
+            , connect = #{connect}
+            , addr = #{addrs}
+    </insert>
+    <select id="checkEmailOrUid">
+        SELECT *
+        FROM parents
+        <where>
+            <if test="uid != null and uid != ''">
+                uid = #{uid}
+            </if>
+            <if test="email != null and email != ''" >
+                and email = #{email}
+            </if>
+        </where>
+    </select>
+    <select id="getParentsUser">
+        SELECT parents_id AS parentsId
+                , uid
+                , upw
+                , name
+                , phone
+                , sub_phone AS subPhone
+                , email
+                , connect
+                , auth
+                , addr
+        FROM parents
+        WHERE parents_id = #{signedUserId}
+    </select>
+    <select id="getFindId">
+        SELECT uid
+        FROM parents
+        WHERE name = #{nm}
+        AND phone = #{phone}
+    </select>
+    <update id="patchParentsUser">
+        UPDATE parents A
+        LEFT JOIN student B
+        ON A.parents_id = B.parents_id
+        <set>
+            <if test="nm != null">
+                A.name = #{nm},
+            </if>
+            <if test="connet != null">
+                A.connect = #{connect},
+            </if>
+            <if test="phone != null">
+                A.phone = #{phone},
+            </if>
+            <if test="subPhone != null">
+                A.sub_phone = #{subPhone},
+            </if>
+            <if test="email != null">
+                A.email = #{email},
+            </if>
+            <if test="addr != null">
+                A.addr = #{addr},
+            </if>
+        </set>
+        WHERE A.parents_id = #{parentsId}
+    </update>
+    <update id="patchPassword">
+        UPDATE parents
+        SET upw = #{newUpw}
+        WHERE parents_id = #{parentsId}
+    </update>
+    <select id="signInPost">
+        SELECT parents_id AS parentsId
+                , uid
+                , upw
+                , name
+                , phone
+                , sub_phone AS subPhone
+                , email
+                , connect
+                , auth
+                , addr
+                , accept
+                , created_at AS createdAt
+                , updated_at AS updatedAt
+        FROM parents
+        WHERE uid = #{uid}
+    </select>
+    <select id="getParentUserList">
+        SELECT parents_id AS parentsId
+                , uid
+                , upw
+                , name
+                , phone
+                , sub_phone AS subPhone
+                , email
+                , connect
+                , addr
+                , rand_code AS randCode
+        FROM parents
+        WHERE uid = #{uid}
+        <if test="phone != null || phone != ''">
+            AND phone = #{phone}
+        </if>
+    </select>
+    <select id="getParentUser">
+        SELECT parents_id AS parentsId
+        , uid
+        , upw
+        , name
+        , phone
+        , sub_phone AS subPhone
+        , email
+        , connect
+        , addr
+        , auth
+        FROM parents
+        WHERE uid = #{uid}
+    </select>
+    <insert id="signature" useGeneratedKeys="true" keyProperty="signId">
+        INSERT INTO score_sign
+        SET student_pk = #{studentPk}
+        , year = #{year}
+        , semester = #{semester}
+        , pic = #{pic}
+        , exam_sign = #{examSign}
+    </insert>
+    <update id = "postSignaturePic">
+        UPDATE score_sign
+        SET pic = #{pic}
+        WHERE sign_id = #{signId}
+    </update>
+    <select id="getSignature">
+        SELECT student_pk AS studentPk
+                , year
+                , semester
+        FROM score_sign
+        WHERE student_pk = #{studentPk}
+        AND year = #{year}
+        AND semester = #{semester}
+        AND exam_sign = #{examSign}
+    </select>
+    <delete id="delSignature">
+        DELETE FROM score_sign
+        WHERE student_pk = #{studentPk}
+        AND year = #{year}
+        AND semester = #{semester}
+        AND exam_sign = #{examSign}
+    </delete>
+    <select id="selTest">
+        SELECT parents_id AS parentId
+        , uid
+        , upw
+        , name
+        , phone
+        , sub_phone AS subPhone
+        , email
+        , connect
+        , auth
+        , addr
+        , accept
+        , created_at AS createdAt
+        , updated_at AS updatedAt
+        FROM parents
+        <where>
+            <if test="signedUserId > 0">
+                parents_id = #{signedUserId}
+            </if>
+        </where>
+        ORDER BY parents_id
+    </select>
+    <update id="updStudent">
+        UPDATE student
+        SET parent_id = #{parentPk}
+        WHERE stu_id = #{studentPk}
+    </update>
+    <select id="studentList">
+        SELECT a.name AS studentName
+        , a.uid AS uid
+        , a.accept AS accept
+        , a.state AS state
+        , a.birth AS birth
+        , a.stu_id AS studentPk
+        , a.grade AS grade
+        , a.pic AS pic
+        , a.rand_code AS randCode
+        , d.name AS teacherName
+        , d.phone AS teacherPhone
+        , d.email AS teacherEmail
+        , d.tea_id AS teaId
+        FROM student a
+        INNER JOIN student_class b
+        ON a.stu_id = b.stu_id
+        INNER JOIN class c
+        ON b.class_id = c.class_id
+        INNER JOIN teacher d
+        ON c.tea_id = d.tea_id
+        INNER JOIN parents f
+        ON a.parent_id = f.parents_id
+        WHERE f.parents_id = #{parentId} ;
+    </select>
+    <select id="getStudentParents">
+        SELECT
+                s.stu_id AS studentPk,
+                s.name AS name,
+                s.gender AS gender,
+                s.birth AS birth,
+                s.phone AS phone,
+                p.name AS parentName,
+                p.phone AS parentPhone,
+                s.parent_id AS parentsPk,
+                MAX(sc.class_id) AS classId,
+                t.name AS teacherName,
+                s.pic AS pic,
+                t.tea_id AS teaId
+        FROM student s
+        LEFT JOIN parents p
+        ON s.parent_id = p.parents_id
+        LEFT JOIN (
+                SELECT sc1.class_id AS class_id
+                , sc1.stu_id
+                FROM student_class sc1
+                INNER JOIN student sc2
+                ON sc1.stu_id = sc2.stu_id
+                ORDER BY sc1.class_id DESC
+        ) sc
+        ON s.stu_id = sc.stu_id
+        LEFT JOIN class c
+        ON sc.class_id = c.class_id
+        LEFT JOIN teacher t
+        ON c.tea_id = t.tea_id
+        WHERE s.parent_id = #{parentPk}
+        GROUP BY s.stu_id, s.name, s.gender, s.birth, s.phone, p.name, p.phone, s.parent_id
+        ORDER BY s.name, s.birth, sc.class_id DESC ;
+    </select>
+    <select id="selPasswordBeforeLogin">
+        SELECT parents_id AS parentsId
+        , uid
+        , upw
+        , name
+        , phone
+        , sub_phone AS subPhone
+        , email
+        , connect
+        , addr
+        FROM parents
+        WHERE uid = #{uid}
+    </select>
+
+    <select id="getParentsList">
+        SELECT
+        p.parents_id AS parentsId,
+        p.name AS NAME,
+        s.name AS studentName,
+        p.connect AS connect
+        FROM
+        parents p
+        LEFT JOIN
+        student s ON p.parents_id = s.parent_id
+        LEFT JOIN
+        student_class sc ON s.stu_id = sc.stu_id
+        LEFT JOIN
+        class c ON sc.class_id = c.class_id
+        LEFT JOIN
+        teacher t ON c.tea_id = t.tea_id
+        WHERE
+        t.tea_id = 3
+        AND c.class_id = SUBSTRING(s.grade, 1, 3)
+        ORDER BY
+        s.name, s.birth;
+    </select>
+
+</mapper>

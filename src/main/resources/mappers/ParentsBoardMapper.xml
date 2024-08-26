@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.green.fefu.perentsBoard.ParentsBoardMapper">
+    <insert id="postBoard">
+        INSERT INTO parentsBoard
+        (writerType, parentsId, content)
+        VALUES
+        (#{writerId}, #{parentsId}, #{content})
+    </insert>
+
+    <select id="getBoard">
+        SELECT writerType, writerId, content, sent_at, readMsg
+        FROM parentsBoard A
+        <if test="writerType = 'ROLE_PARENTS'">
+            INNER JOIN student B
+            ON A.writer_id=B.parent_id
+        </if>
+        <!-- SQL에서 학부모-학생 이름 형태로 출력 -->
+        <!-- 학부모는 프로필 사진이 없다 -->
+    </select>
+
+
+    <!--학부모가 자신이 작성한 리스트 출력-->
+    <select id="getBoardParent">
+        SELECT content, read
+        FROM parentsBoard
+        WHERE parents_id=#{parentsId}
+            AND class_id=#{classId}
+        ORDER BY created_at
+        LIMIT 10
+    </select>
+
+    <select id="">
+        SELECT CONCAT(X.name, -, L.nm
+        FROM parents_id L
+        INNER JOIN (SELECT A.student_pk, A.name, A.parent_id
+                    FROM student A
+                    WHERE A.student_pk in(SELECT C.stu_id
+                                    FROM student_class C
+                                    WHERE C.class_id=(SELECT class_id
+                                                        FROM class
+                                                        WHERE tea_id=#{teaId}) D)) X
+        ON X.stu_id=L.stu_id
+    </select>
+</mapper>

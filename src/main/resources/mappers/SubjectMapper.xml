@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.green.fefu.Subjcet.SubjectMapper">
+
+    <insert id="SubjectReq" keyProperty="subjectId" useGeneratedKeys="true">
+        INSERT INTO subject
+        SET subject_name = #{subjectName}
+        , grade = #{grade}
+        <if test = "order != null or order == 3">
+            subject_id = #{3}
+        </if>
+    </insert>
+
+</mapper>

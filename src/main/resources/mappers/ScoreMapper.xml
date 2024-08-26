@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.green.fefu.score.ScoreMapper">
+    <insert id="postScore">
+        INSERT INTO score
+        (sc_id, year, semester)
+        VALUES (#{studentPk}, #{year}, #{semester})
+    </insert>
+
+    <insert id="postScoreList">
+        INSERT INTO score
+        (sc_id, year, semester, name, exam, mark)
+        VALUES
+        <foreach item="item" collection="scoreList" separator=",">
+            (#{studentPk}, #{year}, #{semester}, #{item.name}, #{item.exam}, #{item.mark})
+        </foreach>
+    </insert>
+
+    <delete id="scoreSing">
+        DELETE FROM score_sign
+        WHERE student_pk = #{studentPk}
+    </delete>
+    <select id="getScoreMidterm">
+        SELECT
+        score_id AS scoreId,
+        stu_id AS studentPk,
+        CONCAT(#{latestGrade}, SUBSTRING(class_id, 2)) AS classId,
+        subject_name AS name,
+        exam AS exam,
+        mark AS mark,
+        class_avg AS classAvg,
+        subject_class_rank AS subjectClassRank,
+        subject_grade_rank AS subjectGradeRank,
+        grade_avg AS gradeAvg,
+        grade_rank AS gradeSchoolRank
+    <if test="latestSemester == 1 and exam == 1" >
+        FROM view_score_semester1_midterm
+    </if>
+    <if test="latestSemester == 2 and exam == 1">
+        FROM view_score_semester2_midterm
+    </if>
+    <where>
+        stu_id = #{studentPk}
+        AND SUBSTRING(class_id, 1, 1) = #{latestGrade}
+    </where>
+</select>
+    <select id="getScoreFinal">
+        SELECT
+        score_id AS scoreId,
+        stu_id AS studentPk,
+        CONCAT(#{latestGrade}, SUBSTRING(class_id, 2)) AS classId,
+        subject_name AS name,
+        exam AS exam,
+        mark AS mark,
+        class_avg AS classAvg,
+        subject_class_rank AS subjectClassRank,
+        subject_grade_rank AS subjectGradeRank,
+        grade_avg AS gradeAvg,
+        grade_rank AS gradeSchoolRank
+
+        <if test="latestSemester == 1 and exam == 2" >
+            FROM view_score_semester1_final
+        </if>
+        <if test="latestSemester == 2 and exam == 2">
+            FROM view_score_semester2_final
+        </if>
+        <where>
+            stu_id = #{studentPk}
+            AND SUBSTRING(class_id, 1, 1) = #{latestGrade}
+        </where>
+    </select>
+    <select id="getStu">
+        SELECT
+        v.scoreId,
+        s.stu_id AS studentPk,
+        v.latestGrade,
+        T.latestSemester,
+        scr.year AS latestYear
+        FROM
+        student s
+        LEFT JOIN
+        student_class sc ON s.stu_id = sc.stu_id
+        LEFT JOIN
+        score scr ON sc.sc_id = scr.sc_id
+        JOIN (
+        SELECT
+        LEFT(a.grade, 1) AS latestGrade,
+        b.score_id AS scoreId
+        FROM
+        student a
+        LEFT JOIN
+        score b ON a.stu_id = b.sc_id
+        WHERE
+        a.stu_id = #{studentPk}
+        ) v ON LEFT(s.grade, 1) = v.latestGrade
+        LEFT JOIN (
+        SELECT
+        LEFT(b.semester, 1) AS latestSemester,
+        b.score_id AS scoreId
+        FROM
+        student a
+        LEFT JOIN
+        student_class c ON a.stu_id = c.stu_id
+        LEFT JOIN
+        score b ON c.sc_id = b.sc_id
+        WHERE
+        a.stu_id = #{studentPk}
+        ORDER BY
+        b.semester DESC
+        LIMIT 1  -- 최신 학기만 가져오기 위해 LIMIT 1 사용
+        ) T ON LEFT(scr.semester, 1) = v.latestGrade
+        WHERE
+        s.stu_id = #{studentPk}
+        GROUP BY
+        s.stu_id
+        ORDER BY
+        s.stu_id;
+    </select>
+
+    <select id="getDetailScore">
+        SELECT
+        score_id AS scoreId,
+        stu_id AS studentPk,
+        CONCAT(#{latestGrade}, SUBSTRING(class_id, 2)) AS classId,
+        subject_name AS name,
+        exam AS exam,
+        mark AS mark,
+        class_avg AS classAvg,
+        subject_class_rank AS subjectClassRank,
+        subject_grade_rank AS subjectGradeRank,
+        grade_avg AS gradeAvg,
+        grade_rank AS gradeSchoolRank
+        <if test="semester == 1 and exam == 1">
+            FROM view_score_semester1_midterm
+        </if>
+        <if test="semester == 2 and exam == 1">
+            FROM view_score_semester2_midterm
+        </if>
+        <where>
+            stu_id = #{studentPk}
+            AND SUBSTRING(class_id, 1, 1) = #{grade}
+        </where>
+    </select>
+
+    <select id="getDetailScoreFinal">
+        SELECT
+        score_id AS scoreId,
+        stu_id AS studentPk,
+        subject_name AS name,
+        exam AS exam,
+        mark AS mark,
+        class_avg AS classAvg,
+        subject_class_rank AS subjectClassRank,
+        subject_grade_rank AS subjectGradeRank,
+        grade_avg AS gradeAvg,
+        grade_rank AS gradeSchoolRank
+        <if test="semester == 1 and exam == 2">
+            FROM view_score_semester1_final
+        </if>
+        <if test="semester == 2 and  exam == 2">
+            FROM view_score_semester2_final
+        </if>
+        <where>
+            stu_id = #{studentPk}
+            AND SUBSTRING(class_id, 1, 1) = #{grade}
+        </where>
+    </select>
+    <delete id="delScore">
+        DELETE FROM score
+        WHERE sc_id = #{studentPk}
+        AND exam= #{exam}
+        AND semester= #{semester}
+    </delete>
+    <select id="totalList">
+        SELECT *  FROM  score
+        WHERE sc_id = #{scId}
+        AND semester = #{semester}
+        AND exam = #{exam}
+        AND year = #{year}
+    </select>
+
+    <select id="rankListFinal">
+        SELECT class_student_count AS classStudentCount,
+        grade_student_count AS gradeStudentCount,
+        class_rank AS classRank,
+        grade_rank AS gradeRank
+        <if test="semester == 1 and exam == 2">
+            FROM view_score_semester1_final
+        </if>
+        <if test="semester == 2 and exam == 2">
+            FROM view_score_semester2_final
+        </if>
+        WHERE stu_id = #{studentPk}
+        AND SUBSTRING(class_id, 1, 1) = #{grade}
+        LIMIT 1
+    </select>
+    <select id="rankListMid">
+        SELECT  class_student_count AS classStudentCount,
+        grade_student_count AS gradeStudentCount,
+        class_rank AS classRank,
+        grade_rank AS gradeRank
+        <if test="semester == 1 and exam == 1">
+            FROM view_score_semester1_midterm
+        </if>
+        <if test="semester == 2 and exam == 1">
+            FROM view_score_semester2_midterm
+        </if>
+        WHERE stu_id = #{studentPk}
+        AND SUBSTRING(class_id, 1, 1) = #{grade}
+        LIMIT 1
+    </select>
+
+    <select id="selScore">
+    SELECT
+    score_id AS scoreId,
+    stu_id AS studentPk,
+    CONCAT(#{latestGrade}, SUBSTRING(class_id, 2)) AS classId,
+    subject_name AS name,
+    exam AS exam,
+    mark AS mark,
+    class_avg AS classAvg,
+        class_subject_rank,
+    subject_grade_rank AS subjectGradeRank,
+    grade_avg AS gradeAvg,
+    grade_rank AS gradeSchoolRank,
+    class_student_count AS classStudentCount,
+    grade_student_count AS gradeStudentCount,
+    class_rank AS classRank,
+    grade_rank AS gradeRank
+    <if test="latestSemester == 1 and exam == 1" >
+        FROM view_score_semester1_midterm
+    </if>
+    <if test="latestSemester == 2 and exam == 1">
+        FROM view_score_semester2_midterm
+    </if>
+    </select>
+    <select id="getClassId">
+        SELECT A.class_id AS classId
+        FROM student_class A
+        INNER JOIN class B
+        ON A.class_id = B.class_id
+        WHERE tea_id = #{teaId} AND stu_id = #{stuId}
+    </select>
+    <select id="signResult">
+        SELECT pic,exam_sign AS examSign, sign_id AS signId
+        FROM score_sign
+        WHERE student_pk = #{studentPk} AND semester = #{semester} AND exam_sign = #{examSign}
+    </select>
+</mapper>

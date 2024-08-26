@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.green.fefu.student.service.StudentMapper">
+
+    <insert id="createStudent" keyProperty="pk" useGeneratedKeys="true">
+        INSERT INTO student
+        SET
+        grade = #{grade},
+        name = #{name},
+        gender = #{gender},
+        birth = #{birth},
+        addr = #{addr},
+        etc = #{etc},
+        pic = #{pic},
+        eng_name = #{engName},
+        phone = #{phone}
+    </insert>
+
+    <update id="deleteStudent">
+        UPDATE student
+        SET state = #{state}
+        WHERE student_pk = #{pk}
+    </update>
+
+    <select id="getStudentList">
+        SELECT
+        s.stu_id AS studentPk,
+        s.name AS name,
+        s.gender AS gender,
+        s.birth AS birth,
+        s.phone AS phone,
+        p.name AS parentName,
+        p.phone AS parentPhone
+        FROM
+        student s
+        LEFT JOIN
+        parents p ON s.parent_id = p.parents_id
+        LEFT JOIN
+        student_class sc ON s.stu_id = sc.stu_id
+        LEFT JOIN
+        class c ON sc.class_id = c.class_id
+        LEFT JOIN
+        teacher t ON c.tea_id = t.tea_id
+        WHERE
+        t.tea_id = #{pk}
+        ORDER BY s.name, s.birth
+    </select>
+
+    <select id="getStudentDetail">
+        SELECT
+        s.stu_id AS pk,
+        s.name AS name,
+        s.gender AS gender,
+        s.birth AS birth,
+        s.phone AS phone,
+        s.addr AS addr,
+        s.etc AS etc,
+        s.created_at AS createdAt,
+        sc.class_id AS uClass,
+        p.uid AS parentId,
+        p.name AS parentName,
+        p.connect AS connect,
+        p.phone AS parentPhone,
+        s.pic AS pic,
+        t.name AS teacherName
+        FROM
+        student s
+        LEFT JOIN
+        parents p ON s.parent_id = p.parents_id
+        LEFT JOIN
+        student_class sc ON s.stu_id = sc.stu_id
+        LEFT JOIN
+        class c ON sc.class_id = c.class_id
+        LEFT JOIN
+        teacher t ON c.tea_id = t.tea_id
+        WHERE
+        s.stu_id = #{pk}
+        LIMIT 1
+    </select>
+
+    <update id="updateStudent">
+        UPDATE student
+        <set>
+            <if test="studentName != null and studentName != ''">
+                name = #{studentName}
+            </if>
+            <if test="studentPhone != null and studentPhone != ''">
+                , phone = #{studentPhone}
+            </if>
+            <if test="fullAddr != null and fullAddr != ''">
+                , addr = #{fullAddr}
+            </if>
+            <if test="studentEtc != null and studentEtc != ''">
+                , etc = #{studentEtc}
+            </if>
+            <if test="studentBirth != null and studentBirth != ''">
+                , birth = #{studentBirth}
+            </if>
+        </set>
+        WHERE stu_id = #{studentPk}
+    </update>
+
+    <select id="getStudentListForParent">
+        SELECT name, grade, stu_id AS pk
+        FROM student
+        <where>
+            state = 1 AND parents_id IS NULL
+            <if test="searchWord != null and searchWord != ''">
+                AND name LIKE '%${searchWord}%'
+            </if>
+        </where>
+        ORDER BY name, grade
+    </select>
+
+    <update id="updStudentGrade">
+        UPDATE student
+        SET grade = #{grade}, etc = null
+        WHERE stu_id = #{studentPk}
+    </update>
+
+    <insert id="insNewClass">
+        INSERT INTO student_class
+        SET stu_id = #{studentPk},
+        class_id = #{subNumber},
+        etc = #{etc}
+    </insert>
+
+    <select id="selOneTest">
+        SELECT stu_id AS pk, parents_id AS parentId,
+        grade, name, gender, birth, pic, addr, phone, etc,
+        eng_name AS engName, created_at AS createdAt,
+        state, updated_at AS updatedAt
+        FROM student
+        WHERE stu_id = #{pk}
+    </select>
+
+    <select id="getStudentEtc">
+        SELECT etc
+        FROM student
+        WHERE stu_id = #{pk}
+    </select>
+
+    <update id="updStudentEtc">
+        UPDATE student_class
+        SET etc = #{etc}
+        WHERE sc_id = (
+        SELECT MAX(sc_id)
+        FROM student_class
+        WHERE stu_id = #{pk}
+        )
+    </update>
+
+    <select id="selPrevEtc">
+        SELECT
+        sc.class_id AS uClass,
+        ss.etc AS etc,
+        t.name AS teacherName
+        FROM
+        student_class sc
+        JOIN
+        CLASS c
+        ON sc.class_id = c.class_id
+        JOIN teacher t
+        ON c.tea_id = t.tea_id
+        JOIN
+        student ss
+        ON sc.stu_id = ss.stu_id
+        WHERE
+        sc.stu_id = #{pk}
+        ORDER BY uClass
+    </select>
+
+    <update id="updStudentParent">
+        UPDATE student
+        SET parent_id = #{parentPk}
+        WHERE rand_code = #{studentRandCode}
+    </update>
+
+
+    <insert id="insertClassIfNotExists">
+        INSERT IGNORE INTO class
+        SET class_id = #{classPk},
+        tea_id = #{teacherPk}
+    </insert>
+
+    <insert id="insertClassStudent">
+        INSERT INTO student_class
+        SET stu_id = #{studentPk},
+        class_id = #{classPk}
+    </insert>
+
+    <select id="findTeacherName">
+        SELECT te.name
+        FROM student st
+        JOIN student_class sc
+        ON st.stu_id = sc.stu_id
+        JOIN class cl
+        ON sc.class_id = cl.class_id
+        JOIN teacher te
+        ON cl.tea_id = te.tea_id
+        WHERE st.stu_id = #{studentPk}
+        ORDER BY st.grade DESC
+        LIMIT 1
+    </select>
+
+</mapper>

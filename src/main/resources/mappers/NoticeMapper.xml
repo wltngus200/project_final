@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.green.fefu.notice.NoticeMapper">
+
+    <!--알림장 작성 Create-->
+    <insert id="postNotice">
+        INSERT INTO notice
+        (tea_id, title, content, class_id, state)
+        VALUES
+        (#{teaId}, #{title}, #{content}, #{classId}, #{state})
+    </insert>
+
+
+    <!--알림장 조회 Read-->
+    <select id="getNotice">
+        SELECT notice_id AS noticeId, tea_id AS teaId, class_id AS classId,
+               title, content, created_at AS createdAt, updated_at AS updatedAt, state
+        FROM notice
+        WHERE class_id=#{classId}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="getNoticeParent">
+        SELECT A.notice_id AS noticeId, A.tea_id AS teaId, A.class_id AS classId,
+        A.title, A.content, A.created_at AS createdAt, A.updated_at AS updatedAt, A.state
+        FROM notice A
+        INNER JOIN (SELECT FLOOR(grade/100) AS class_id, stu_id
+        FROM student
+        WHERE parent_id=#{parentsId}) B
+        ON A.class_id=B.class_id AND B.stu_id={studentPk};
+<!--        SELECT notice_id AS noticeId, tea_id AS teaId, class_id AS classId,-->
+<!--        title, content, created_at AS createdAt, updated_at AS updatedAt, state-->
+<!--        FROM notice-->
+<!--        WHERE class_id=#{classId} AND stu_id = #{studentPk}-->
+<!--        ORDER BY created_at DESC-->
+    </select>
+
+
+    <!--알림장 조회 Read 1개-->
+    <select id="getNoticeLatest">
+        SELECT notice_id AS noticeId, tea_id AS teaId, class_id AS classId,
+        title, content, created_at AS createdAt, updated_at AS updatedAt, state
+        FROM notice
+        WHERE class_id=#{classId}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="getNoticeLatestParent">
+        SELECT A.notice_id AS noticeId, A.tea_id AS teaId, A.class_id AS classId,
+        A.title, A.content, A.created_at AS createdAt, A.updated_at AS updatedAt, A.state
+        FROM notice A
+        INNER JOIN (SELECT FLOOR(grade/100) AS class_id, stu_id
+        FROM student
+        WHERE parent_id=#{parentsId}) B
+        ON A.class_id=B.class_id AND B.stu_id=#{studentPk};
+
+<!--        SELECT notice_id AS noticeId, tea_id AS teaId, class_id AS classId,-->
+<!--        title, content, created_at AS createdAt, updated_at AS updatedAt, state-->
+<!--        FROM notice-->
+<!--        WHERE class_id=#{classId} AND stu_id = #{studentPk}-->
+<!--        ORDER BY created_at DESC-->
+    </select>
+
+
+
+    <!--알림장 수정(구현 예정) Update-->
+    <update id="putNotice">
+        UPDATE notice
+        <set>
+        <if test="title!=null">
+            title=#{title},
+        </if>
+        <if test="content!=null">
+            content=#{content}
+        </if>
+        </set>
+        WHERE notice_id=#{noticeId} AND tea_id=#{teaId}
+    </update>
+
+
+    <!--알림장 삭제 Delete-->
+    <delete id="deleteNotice">
+        DELETE
+        FROM notice
+        WHERE notice_id=#{noticeId}
+                    AND
+              tea_id=#{teaId}
+                    AND
+              class_id=#{classId}
+    </delete>
+
+
+    <!--어떤 유저가 로그인 했냐에 따라 관계된 학반 조회-->
+    <!--로그인 한 선생님에 따른 담당 학반 조회-->
+    <select id="teacherHomeroom">
+        SELECT class_id
+        FROM class
+        WHERE tea_id=#{teaId}
+    </select>
+
+
+    <!--로그인 한 학부모에 따른 자녀의 학반 조회-->
+    <select id="childClassRoomList">
+        SELECT S.class_id
+        FROM parents A
+        INNER JOIN (
+        SELECT A.stu_id, A.`name`, max(B.class_id) AS class_id, A.parent_id
+        FROM student A
+        INNER JOIN student_class B
+        ON A.stu_id=B.stu_id
+        GROUP BY A.stu_id
+        ) S
+        ON A.parents_id=S.parent_id
+        WHERE A.parents_id=#{parentsId} AND S.stu_id=#{studentPk}
+        LIMIT 1
+    </select>
+
+
+    <select id="studentClass">
+        SELECT Floor(grade/100) AS class_id
+        FROM student A
+        WHERE stu_id=#{stuId}
+        ORDER BY created_at DESC;
+    </select>
+
+
+
+
+    <!--TDD에 쓰는 메소드-->
+
+    <!--TDD용 전체 리스트 가져오는 SELECT-->
+    <select id="getNoticeForTDD">
+        SELECT notice_id AS noticeId, tea_id AS teaId, class_id AS classId,
+        title, content, created_at AS createdAt, updated_at AS updatedAt, state
+        FROM notice
+    </select>
+
+    <!--TDD용 특정 컬럼 가져오는 SELECT-->
+    <select id="getNoticeForTDDJustOne">
+        SELECT notice_id AS noticeId, tea_id AS teaId, class_id AS classId,
+        title, content, created_at AS createdAt, updated_at AS updatedAt, state
+        FROM notice
+        WHERE title=#{title} AND content=#{content}
+    </select>
+
+
+
+
+</mapper>

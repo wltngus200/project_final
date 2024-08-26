@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.green.fefu.admin.service.AdminMapper">
+    <select id="getParentList">
+        SELECT p.parents_id AS pk, p.uid AS id,
+        p.name AS name, c.class_id AS grade,
+        p.created_at AS createdAt
+        FROM
+        parents p
+        LEFT JOIN student s
+        ON p.parents_id = s.parent_id
+        LEFT JOIN student_class sc
+        ON s.stu_id = sc.stu_id
+        LEFT JOIN class c
+        ON sc.class_id = c.class_id
+        <where>
+            p.accept = 2
+            <if test="searchWord != null and searchWord != ''">
+                AND p.name LIKE '%${searchWord}%'
+            </if>
+        </where>
+        ORDER BY p.created_at
+    </select>
+    <delete id="delClassTeacher">
+        DELETE FROM class
+        WHERE tea_id = #{teaId}
+    </delete>
+    <select id="getTeacherList">
+        SELECT t.tea_id AS pk, t.uid AS id,
+        t.name AS name, c.class_id AS grade,
+        t.created_at AS createdAt
+        FROM teacher t
+        LEFT JOIN class c
+        ON c.tea_id = t.tea_id
+        <where>
+            t.accept = 2
+            <if test="searchWord != null and searchWord != ''">
+                AND t.name LIKE '%${searchWord}%'
+            </if>
+        </where>
+        ORDER BY t.created_at
+    </select>
+
+    <delete id="delParent">
+        DELETE FROM parents
+        WHERE parents_id = #{pk}
+    </delete>
+
+    <delete id="delTeacher">
+        DELETE FROM teacher
+        WHERE tea_id = #{pk}
+    </delete>
+
+    <update id="updParent">
+        UPDATE parents
+        SET accept = 1
+        WHERE parents_id = #{pk}
+    </update>
+
+    <update id="updTeacher">
+        UPDATE teacher
+        SET accept = 1
+        WHERE tea_id = #{pk}
+    </update>
+</mapper>
